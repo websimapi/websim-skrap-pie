@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥧 The Ultimate Pie Experience 🥧</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="pie-nav">
+        <div class="pie-logo">🥧 PIE WORLD 🥧</div>
+        <div class="pie-nav-items">
+            <button class="pie-btn nav-pie" data-flavor="apple">Home Pie</button>
+            <button class="pie-btn nav-pie" data-flavor="cherry">About Pie</button>
+            <button class="pie-btn nav-pie" data-flavor="pumpkin">Contact Pie</button>
+        </div>
+    </nav>
+
+    <main class="pie-container">
+        <section class="pie-hero">
+            <h1 class="pie-title">WELCOME TO PIE PARADISE</h1>
+            <p class="pie-text">Everything is pie! Click, hover, and explore the most delicious web experience ever created!</p>
+            
+            <div class="pie-buttons">
+                <button class="pie-btn mega-pie" data-flavor="blueberry">Generate New Pie</button>
+                <button class="pie-btn mega-pie" data-flavor="pecan">Pie Gallery</button>
+                <button class="pie-btn mega-pie" data-flavor="chocolate">Pie Chat</button>
+            </div>
+        </section>
+
+        <section class="pie-showcase">
+            <div class="pie-grid">
+                <div class="pie-item" data-flavor="apple"></div>
+                <div class="pie-item" data-flavor="cherry"></div>
+                <div class="pie-item" data-flavor="pumpkin"></div>
+                <div class="pie-item" data-flavor="blueberry"></div>
+                <div class="pie-item" data-flavor="pecan"></div>
+                <div class="pie-item" data-flavor="chocolate"></div>
+            </div>
+        </section>
+
+        <section class="pie-interactive">
+            <h2 class="pie-subtitle">Interactive Pie Zone</h2>
+            <div class="pie-controls">
+                <button class="pie-btn small-pie" id="generate-pie">🥧 Generate Random Pie</button>
+                <button class="pie-btn small-pie" id="pie-chat">💬 Chat with Pie AI</button>
+                <button class="pie-btn small-pie" id="pie-sound">🔊 Pie Sounds</button>
+            </div>
+            <div class="generated-pie-container"></div>
+        </section>
+    </main>
+
+    <div class="pie-cursor"></div>
+    <script src="script.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
