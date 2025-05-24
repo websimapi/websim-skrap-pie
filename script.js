@@ -283,7 +283,24 @@ class PieExperience {
         container.innerHTML = '<div class="loading">🥧 Loading pie gallery... 🥧</div>';
     
         const renderGallery = async (pies) => {
-            const currentUser = await window.websim.getCurrentUser();
+            let currentUser = { username: 'guest-pie-lover', id: null }; // Default user
+
+            if (window.websim && typeof window.websim.getCurrentUser === 'function') {
+                try {
+                    const user = await window.websim.getCurrentUser();
+                    // Ensure user object is valid before assigning
+                    if (user && typeof user.username === 'string' && (typeof user.id === 'string' || typeof user.id === 'number')) {
+                        currentUser = user;
+                    } else {
+                        console.warn("window.websim.getCurrentUser() returned invalid user data. Using default user.", user);
+                    }
+                } catch (e) {
+                    console.error("Error calling window.websim.getCurrentUser:", e);
+                    // currentUser remains the default guest-pie-lover
+                }
+            } else {
+                console.warn("window.websim.getCurrentUser is not a function or window.websim is not available. Using default user.");
+            }
             
             let galleryHTML = `
                 <h3>🥧 PIE GALLERY - COMMUNITY COLLECTION 🥧</h3>
@@ -298,7 +315,7 @@ class PieExperience {
             } else {
                 // pies are already newest to oldest from getList() / subscribe()
                 for (const pie of pies) {
-                    const isOwner = pie.username === currentUser.username;
+                    const isOwner = currentUser.username && pie.username === currentUser.username;
                     galleryHTML += `
                         <div class="pie-gallery-item" style="text-align: center; background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 15px; backdrop-filter: blur(5px);">
                             <img src="${pie.image_url}" alt="${pie.name}" style="width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 0.5rem; object-fit: cover;">
@@ -340,10 +357,8 @@ class PieExperience {
     
         this.pieGallerySubscription = room.collection('pie').subscribe(async (piesFromDb) => {
             // Check if the gallery section is still supposed to be active
-            if (container.querySelector('.pie-gallery-grid') || container.querySelector('.loading')) {
+            if (container.querySelector('.pie-gallery-grid') || container.innerHTML.includes("Loading pie gallery...")) {
                  await renderGallery(piesFromDb);
-            } else if (container.innerHTML.includes("Loading pie gallery...")) { // If it was just opened
-                await renderGallery(piesFromDb);
             }
         });
     }
@@ -446,11 +461,6 @@ class PieExperience {
             try {
                 await room.collection('pie').delete(pieId);
                 // The gallery will auto-update due to the subscription.
-                // No need to call this.showPieGallery() explicitly if subscription is active.
-                // However, showPieGallery() itself manages subscription, so calling it ensures consistency.
-                // If gallery is not visible, it means subscription was cleared.
-                // If current view IS gallery, subscription will handle it. Let's remove explicit refresh.
-                // The subscription in showPieGallery should handle the re-render.
             } catch (error) {
                 alert('Error deleting pie. You can only delete your own pies!');
                 console.error('Error deleting pie:', error);
