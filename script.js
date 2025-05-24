@@ -39,6 +39,22 @@ class PieExperience {
                 this.explainPie(item.dataset.flavor);
             });
         });
+
+        // Navigation buttons functionality
+        document.querySelectorAll('.nav-pie').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const flavor = e.target.dataset.flavor;
+                this.handleNavigation(flavor);
+            });
+        });
+
+        // Hero section buttons functionality
+        document.querySelectorAll('.mega-pie').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const flavor = e.target.dataset.flavor;
+                this.handleHeroButton(flavor);
+            });
+        });
     }
 
     setupCustomCursor() {
@@ -213,6 +229,87 @@ class PieExperience {
         }
     }
 
+    async handleNavigation(flavor) {
+        const container = document.querySelector('.generated-pie-container');
+        
+        switch(flavor) {
+            case 'apple':
+                container.innerHTML = `
+                    <h3>🥧 Welcome to Pie World Home! 🥧</h3>
+                    <p>You are now in the ultimate pie headquarters! Everything here is made of delicious, flaky pie crust!</p>
+                    <img src="apple-pie.png" alt="Home Pie" style="width: 200px; height: 200px; border-radius: 50%; margin: 1rem;">
+                `;
+                break;
+            case 'cherry':
+                container.innerHTML = `
+                    <h3>🥧 About Our Pie Universe 🥧</h3>
+                    <p>This website was built entirely out of pie! Every pixel, every button, every letter - all made from the finest pie ingredients. We are the world's first 100% edible website!</p>
+                    <img src="cherry-pie.png" alt="About Pie" style="width: 200px; height: 200px; border-radius: 50%; margin: 1rem;">
+                `;
+                break;
+            case 'pumpkin':
+                container.innerHTML = `
+                    <h3>🥧 Contact the Pie Masters 🥧</h3>
+                    <p>Send us a message through pie telepathy! Or use our pie chat feature above. We're always baking up new pie experiences!</p>
+                    <img src="pumpkin-pie.png" alt="Contact Pie" style="width: 200px; height: 200px; border-radius: 50%; margin: 1rem;">
+                    <p>📧 Email: piemaster@pieworld.pie<br>📞 Phone: 1-800-PIE-TIME</p>
+                `;
+                break;
+        }
+    }
+
+    async handleHeroButton(flavor) {
+        switch(flavor) {
+            case 'blueberry':
+                await this.generateRandomPie();
+                break;
+            case 'pecan':
+                await this.showPieGallery();
+                break;
+            case 'chocolate':
+                await this.startPieChat();
+                break;
+        }
+    }
+
+    async showPieGallery() {
+        const container = document.querySelector('.generated-pie-container');
+        container.innerHTML = '<div class="loading">🥧 Loading pie gallery... 🥧</div>';
+
+        const galleryPies = [
+            'vintage apple pie with lattice crust',
+            'modern chocolate silk pie with gold leaf',
+            'rustic blueberry pie with sugar crystals',
+            'elegant lemon meringue pie with perfect peaks',
+            'classic pumpkin pie with cinnamon dust',
+            'gourmet pecan pie with caramel drizzle'
+        ];
+
+        let galleryHTML = '<h3>🥧 PIE GALLERY - MASTERPIECE COLLECTION 🥧</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 2rem 0;">';
+
+        for (const pieDesc of galleryPies) {
+            try {
+                const result = await websim.imageGen({
+                    prompt: `${pieDesc}, professional food photography, artistic presentation, museum quality`,
+                    transparent: false,
+                    aspect_ratio: "1:1"
+                });
+                
+                galleryHTML += `
+                    <div style="text-align: center;">
+                        <img src="${result.url}" alt="${pieDesc}" style="width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 0.5rem;">
+                        <p style="font-size: 0.8rem; font-weight: bold;">${pieDesc.toUpperCase()}</p>
+                    </div>
+                `;
+            } catch (error) {
+                galleryHTML += `<div style="width: 150px; height: 150px; background: url('small-pie.png'); background-size: cover; border-radius: 50%;"></div>`;
+            }
+        }
+
+        galleryHTML += '</div><button class="pie-btn small-pie" onclick="this.parentElement.innerHTML = \'\'">Close Gallery</button>';
+        container.innerHTML = galleryHTML;
+    }
+
     pieHoverEffect(e) {
         e.target.style.transform = 'scale(1.1) rotate(5deg)';
         e.target.style.filter = 'brightness(1.2) saturate(1.3) drop-shadow(0 10px 20px rgba(0,0,0,0.3))';
@@ -238,4 +335,3 @@ class PieExperience {
 document.addEventListener('DOMContentLoaded', () => {
     new PieExperience();
 });
-
