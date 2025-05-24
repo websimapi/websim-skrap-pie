@@ -1,3 +1,6 @@
+// Initialize WebsimSocket at global scope
+const room = new WebsimSocket();
+
 class PieExperience {
     constructor() {
         this.conversationHistory = [];
@@ -276,38 +279,166 @@ class PieExperience {
         const container = document.querySelector('.generated-pie-container');
         container.innerHTML = '<div class="loading">🥧 Loading pie gallery... 🥧</div>';
 
-        const galleryPies = [
-            'vintage apple pie with lattice crust',
-            'modern chocolate silk pie with gold leaf',
-            'rustic blueberry pie with sugar crystals',
-            'elegant lemon meringue pie with perfect peaks',
-            'classic pumpkin pie with cinnamon dust',
-            'gourmet pecan pie with caramel drizzle'
-        ];
+        // Get pies from database
+        const pies = room.collection('pie').getList();
+        
+        let galleryHTML = `
+            <h3>🥧 PIE GALLERY - COMMUNITY COLLECTION 🥧</h3>
+            <div style="margin: 1rem 0;">
+                <button class="pie-btn small-pie" id="add-pie-btn">Add Your Pie</button>
+            </div>
+            <div class="pie-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 2rem 0;">
+        `;
 
-        let galleryHTML = '<h3>🥧 PIE GALLERY - MASTERPIECE COLLECTION 🥧</h3><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 2rem 0;">';
-
-        for (const pieDesc of galleryPies) {
-            try {
-                const result = await websim.imageGen({
-                    prompt: `${pieDesc}, professional food photography, artistic presentation, museum quality`,
-                    transparent: false,
-                    aspect_ratio: "1:1"
-                });
+        if (pies.length === 0) {
+            galleryHTML += '<p style="grid-column: 1 / -1; text-align: center; font-size: 1.2rem;">No pies in the gallery yet! Be the first to add one! 🥧</p>';
+        } else {
+            // Reverse to show newest first
+            const sortedPies = pies.slice().reverse();
+            for (const pie of sortedPies) {
+                const currentUser = await window.websim.getCurrentUser();
+                const isOwner = pie.username === currentUser.username;
                 
                 galleryHTML += `
-                    <div style="text-align: center;">
-                        <img src="${result.url}" alt="${pieDesc}" style="width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 0.5rem;">
-                        <p style="font-size: 0.8rem; font-weight: bold;">${pieDesc.toUpperCase()}</p>
+                    <div class="pie-gallery-item" style="text-align: center; background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 15px; backdrop-filter: blur(5px);">
+                        <img src="${pie.image_url}" alt="${pie.name}" style="width: 150px; height: 150px; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 0.5rem; object-fit: cover;">
+                        <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">${pie.name.toUpperCase()}</h4>
+                        <p style="font-size: 0.8rem; margin-bottom: 0.5rem;">${pie.description}</p>
+                        <p style="font-size: 0.7rem; opacity: 0.8;">by ${pie.username}</p>
+                        ${isOwner ? `<button class="pie-btn" style="width: 40px; height: 40px; margin-top: 0.5rem; font-size: 0.8rem;" onclick="deletePie('${pie.id}')">🗑️</button>` : ''}
                     </div>
                 `;
-            } catch (error) {
-                galleryHTML += `<div style="width: 150px; height: 150px; background: url('small-pie.png'); background-size: cover; border-radius: 50%;"></div>`;
             }
         }
 
         galleryHTML += '</div><button class="pie-btn small-pie" onclick="this.parentElement.innerHTML = \'\'">Close Gallery</button>';
         container.innerHTML = galleryHTML;
+
+        // Add event listener for add pie button
+        document.getElementById('add-pie-btn').addEventListener('click', () => {
+            this.showAddPieForm();
+        });
+
+        // Subscribe to real-time updates
+        room.collection('pie').subscribe((updatedPies) => {
+            // Only update if gallery is still open
+            if (document.querySelector('.pie-gallery-grid')) {
+                this.showPieGallery();
+            }
+        });
+    }
+
+    async showAddPieForm() {
+        const container = document.querySelector('.generated-pie-container');
+        container.innerHTML = `
+            <h3>🥧 ADD YOUR PIE TO THE GALLERY 🥧</h3>
+            <div style="background: rgba(255,255,255,0.2); padding: 2rem; border-radius: 15px; backdrop-filter: blur(10px);">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Pie Name:</label>
+                    <input type="text" id="pie-name" placeholder="My Amazing Apple Pie" style="width: 100%; padding: 0.5rem; border-radius: 10px; border: none; font-size: 1rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Description:</label>
+                    <textarea id="pie-description" placeholder="A delicious homemade apple pie with..." style="width: 100%; padding: 0.5rem; border-radius: 10px; border: none; font-size: 1rem; height: 80px; resize: vertical;"></textarea>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Generate Pie Image:</label>
+                    <button class="pie-btn small-pie" id="generate-pie-image">🥧 Generate</button>
+                    <span style="margin-left: 1rem; font-size: 0.9rem;">Or upload your own image:</span>
+                    <input type="file" id="pie-image-upload" accept="image/*" style="margin-left: 0.5rem;">
+                </div>
+                <div id="pie-preview" style="margin-bottom: 1rem; text-align: center;"></div>
+                <div style="text-align: center; gap: 1rem; display: flex; justify-content: center;">
+                    <button class="pie-btn small-pie" id="save-pie" disabled>Save Pie</button>
+                    <button class="pie-btn small-pie" onclick="this.showPieGallery()">Cancel</button>
+                </div>
+            </div>
+        `;
+
+        let pieImageUrl = '';
+
+        // Generate pie image
+        document.getElementById('generate-pie-image').addEventListener('click', async () => {
+            const name = document.getElementById('pie-name').value.trim();
+            const description = document.getElementById('pie-description').value.trim();
+            
+            if (!name) {
+                alert('Please enter a pie name first!');
+                return;
+            }
+
+            const preview = document.getElementById('pie-preview');
+            preview.innerHTML = '<div class="loading">🥧 Generating your pie... 🥧</div>';
+
+            try {
+                const result = await websim.imageGen({
+                    prompt: `A beautiful ${name}, ${description}, professional food photography, artisanal bakery style, golden flaky crust, detailed texture`,
+                    transparent: false,
+                    aspect_ratio: "1:1"
+                });
+
+                pieImageUrl = result.url;
+                preview.innerHTML = `<img src="${result.url}" alt="${name}" style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">`;
+                document.getElementById('save-pie').disabled = false;
+            } catch (error) {
+                preview.innerHTML = '<p style="color: red;">Error generating pie image. Try again!</p>';
+            }
+        });
+
+        // Upload pie image
+        document.getElementById('pie-image-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('pie-preview');
+            preview.innerHTML = '<div class="loading">🥧 Uploading your pie... 🥧</div>';
+
+            try {
+                pieImageUrl = await websim.upload(file);
+                preview.innerHTML = `<img src="${pieImageUrl}" alt="Uploaded pie" style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.3); object-fit: cover;">`;
+                document.getElementById('save-pie').disabled = false;
+            } catch (error) {
+                preview.innerHTML = '<p style="color: red;">Error uploading image. Try again!</p>';
+            }
+        });
+
+        // Save pie to database
+        document.getElementById('save-pie').addEventListener('click', async () => {
+            const name = document.getElementById('pie-name').value.trim();
+            const description = document.getElementById('pie-description').value.trim();
+
+            if (!name || !description || !pieImageUrl) {
+                alert('Please fill in all fields and add an image!');
+                return;
+            }
+
+            try {
+                await room.collection('pie').create({
+                    name: name,
+                    description: description,
+                    image_url: pieImageUrl,
+                    flavor: name.toLowerCase()
+                });
+
+                alert('🥧 Your pie has been added to the gallery! 🥧');
+                this.showPieGallery();
+            } catch (error) {
+                alert('Error saving pie. Please try again!');
+                console.error('Error saving pie:', error);
+            }
+        });
+    }
+
+    async deletePie(pieId) {
+        if (confirm('Are you sure you want to remove this pie from the gallery?')) {
+            try {
+                await room.collection('pie').delete(pieId);
+                this.showPieGallery(); // Refresh gallery
+            } catch (error) {
+                alert('Error deleting pie. You can only delete your own pies!');
+                console.error('Error deleting pie:', error);
+            }
+        }
     }
 
     pieHoverEffect(e) {
@@ -331,7 +462,16 @@ class PieExperience {
     }
 }
 
-// Initialize the pie experience
+// Make deletePie globally accessible for inline onclick
+window.deletePie = function(pieId) {
+    // Get the pie experience instance and call deletePie
+    const pieExperience = window.pieExperienceInstance;
+    if (pieExperience) {
+        pieExperience.deletePie(pieId);
+    }
+};
+
+// Initialize the pie experience and store reference globally
 document.addEventListener('DOMContentLoaded', () => {
-    new PieExperience();
+    window.pieExperienceInstance = new PieExperience();
 });
